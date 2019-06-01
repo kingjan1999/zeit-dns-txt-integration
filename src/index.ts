@@ -75,12 +75,12 @@ module.exports = withUiHook(async ({ payload, zeitClient }) => {
 			<Page>
 				<H1>Verify ${domain.name}</H1>
 				<H2>Choose your DNS provider</H2>
-			    <Box display="flex" justifyContent="space-between">	  
+			  <Box display="flex" justifyContent="space-between">	  
 				  <Select name="dnsProvider" value="route53">
 				    ${providerOptions}
-                  </Select>
-                  <Button action="${action}">Verify Now</Button>
-                </Box>
+          </Select>
+          <Button action="${action}">Verify Now</Button>
+        </Box>
 			</Page>
 		`;
     } else if (payload.action === "configure") {
@@ -128,10 +128,7 @@ module.exports = withUiHook(async ({ payload, zeitClient }) => {
 
       // TODO: Try verify via zeit
 
-      return htm`
-          <H1>Domain configured<H1>
-          <p>Configuration of your domain was successful.</p>
-        `;
+      successMessage = 'Your domain was configured successfully!';
     }
   } catch (e) {
     // FIXME: More specific error handling!

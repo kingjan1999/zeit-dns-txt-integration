@@ -1,6 +1,6 @@
 import { htm } from "@zeit/integration-utils";
 
-export default (errorMessage: string) => {
+export default (errorMessage: any) => {
   return htm`
   <Page>
     <Box>

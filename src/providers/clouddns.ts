@@ -16,14 +16,22 @@ const getDNSInstance = (metadata: GCPMetadata) => {
   return dns;
 };
 
-const getZoneForDomain = async (dns: dns_v1.Dns, domain: string) => {
-  const zones = await dns.managedZones.list();
+const getZoneForDomain = async (
+  dns: dns_v1.Dns,
+  domain: string,
+  metadata: GCPMetadata
+) => {
+  const zones = await dns.managedZones.list({
+    project: metadata.GCE_PROJECT
+  });
+
+  const sanitizedDomain = domain.endsWith(".") ? domain : domain + ".";
 
   const zone = (zones.data.managedZones || []).find(
-    (x: any) => x.name === domain
+    (x: dns_v1.Schema$ManagedZone) => x.dnsName === sanitizedDomain
   );
   console.log("found: ");
-  console.log(zones);
+  console.log(zones.data.managedZones);
   if (!zone) {
     throw new Error(`No zone found for domain ${domain}`);
   }
@@ -37,10 +45,11 @@ export const setVerifyAndAlias = async (
   metadata: GCPMetadata
 ) => {
   const dns = getDNSInstance(metadata);
-  const zone = await getZoneForDomain(dns, domain);
+  const zone = await getZoneForDomain(dns, domain, metadata);
 
   const result = await dns.changes.create({
     managedZone: zone.id,
+    project: metadata.GCE_PROJECT,
     requestBody: {
       kind: "dns#change",
       additions: [
@@ -53,7 +62,7 @@ export const setVerifyAndAlias = async (
         {
           name: `now.${domain}.`,
           ttl: 3600,
-          rrdatas: ["alias.zeit.co"],
+          rrdatas: ["alias.zeit.co."],
           type: "CNAME"
         }
       ]
