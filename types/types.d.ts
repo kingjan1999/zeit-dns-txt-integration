@@ -29,6 +29,20 @@ declare interface AWSMetadata {
 declare interface GCPMetadata {
     GCE_PROJECT: string,
     GCE_SERVICE_ACCOUNT_FILE: string;
+    GOOGLE_TOKEN: string;
 }
 
-declare type SupportedProviders = 'route53' | 'clouddns' | 'godaddy';
+declare interface GoDaddyMetadata {
+    API_KEY: string;
+    API_SECRET: string;
+}
+
+declare interface ZeitMetadata {
+    providers: {
+        route53: AWSMetadata;
+        clouddns: GCPMetadata;
+        godaddy: GoDaddyMetadata;
+    }
+}
+
+declare type SupportedProvider = 'route53' | 'clouddns' | 'godaddy';

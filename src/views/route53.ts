@@ -1,7 +1,7 @@
-import {htm} from "@zeit/integration-utils";
+import { htm } from "@zeit/integration-utils";
 
 export default (metadata: AWSMetadata) => {
-    return htm`
+  return htm`
       <Box>
         <Fieldset>
           <FsContent>
@@ -12,7 +12,7 @@ export default (metadata: AWSMetadata) => {
         <Fieldset>
           <FsContent>
             <FsTitle>AWS Secret Key</FsTitle>
-            <Input name="AWS_SECRET_ACCESS_KEY" value=${metadata.AWS_SECRET_ACCESS_KEY} />
+            <Input name="AWS_SECRET_ACCESS_KEY" value=${metadata.AWS_SECRET_ACCESS_KEY || ""} />
           </FsContent>
         </Fieldset>
         <Button action="save-route53">Save</Button>

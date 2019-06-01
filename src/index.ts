@@ -35,24 +35,24 @@ module.exports = withUiHook(async ({ payload, zeitClient }) => {
 
   let successMessage = "";
 
-  const defaultMetadata = {
+  const defaultMetadata: ZeitMetadata = {
     providers: {
       route53: { AWS_SECRET_ACCESS_KEY: "", AWS_ACCESS_KEY_ID: "" },
       clouddns: { GCE_PROJECT: "", GCE_SERVICE_ACCOUNT_FILE: "", GOOGLE_TOKEN: "" },
-      godaddy: {}
+      godaddy: { API_KEY: "", API_SECRET: "" }
     }
   };
 
-  let metadata = await zeitClient.getMetadata();
+  let metadata = await zeitClient.getMetadata() as ZeitMetadata;
   console.log(metadata);
 
   // copy default data
   metadata = merge(defaultMetadata, metadata);
 
-  if(payload.query && payload.query.google_code) {
+  if (payload.query && payload.query.google_code) {
     // save result to metadata
-    metadata.providers.clouddns.GOOGLE_TOKEN = payload.query.google_code;
-    await zeitClient.setMetadata(metadata); 
+    metadata.providers.clouddns.GOOGLE_TOKEN = payload.query.google_code as string;
+    await zeitClient.setMetadata(metadata);
   }
 
   try {
@@ -71,7 +71,7 @@ module.exports = withUiHook(async ({ payload, zeitClient }) => {
       console.log(providers);
       const providerDescriptions = Object.keys(configuredProviders).map(
         // @ts-ignore
-        (key: SupportedProviders) => ({
+        (key: SupportedProvider) => ({
           key,
           name: providers[key].name
         })
@@ -101,24 +101,24 @@ module.exports = withUiHook(async ({ payload, zeitClient }) => {
         </Page>
         `;
     } else if (payload.action.startsWith("save-")) {
-      const provider = payload.action.substr("save-".length);
-      if(provider === 'clouddns' && payload.clientState.GCE_SERVICE_ACCOUNT_FILE) {
-          const fileContents = payload.clientState.GCE_SERVICE_ACCOUNT_FILE;
-          try {
-              const parsed = JSON.parse(fileContents);
-              console.log(parsed);
-              payload.clientState.GCE_SERVICE_ACCOUNT_FILE = JSON.stringify(parsed);
-              payload.clientState.GCE_PROJECT = parsed.project_id;
-          }
-          catch(e) {
-              throw new Error("The provided json file doesn't even look valid.");
-          }
+      const provider = payload.action.substr("save-".length) as SupportedProvider;
+      if (provider === 'clouddns' && payload.clientState.GCE_SERVICE_ACCOUNT_FILE) {
+        const fileContents = payload.clientState.GCE_SERVICE_ACCOUNT_FILE;
+        try {
+          const parsed = JSON.parse(fileContents);
+          console.log(parsed);
+          payload.clientState.GCE_SERVICE_ACCOUNT_FILE = JSON.stringify(parsed);
+          payload.clientState.GCE_PROJECT = parsed.project_id;
+        }
+        catch (e) {
+          throw new Error("The provided json file doesn't even look valid.");
+        }
       }
       metadata.providers[provider] = payload.clientState;
       await zeitClient.setMetadata(metadata);
       successMessage = "Your configuration has been updated!";
     } else if (payload.action.startsWith("do-verify")) {
-      const provider: SupportedProviders = payload.clientState.dnsProvider;
+      const provider: SupportedProvider = payload.clientState.dnsProvider;
       const domainId = payload.action.substr(
         payload.action.indexOf("do-verify-") + "do-verify-".length
       );
