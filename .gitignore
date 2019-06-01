@@ -24,3 +24,5 @@ yarn-error.log*
 
 # these aren't fake, these are real...
 test/fakeDomains.json 
+key-test.json
+policy.json
