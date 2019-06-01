@@ -1,25 +1,27 @@
-import { DNS, Zone } from "@google-cloud/dns";
-
-const {google} = require('googleapis');
-var dns = google.dns('v1');
+import { google, dns_v2beta1, dns_v1 } from "googleapis";
 
 const getDNSInstance = (metadata: GCPMetadata) => {
   const parsedKeyFile = JSON.parse(metadata.GCE_SERVICE_ACCOUNT_FILE);
-  
-  const dns = new DNS({
-    credentials: {
-      client_email: parsedKeyFile.client_email,
-      private_key: parsedKeyFile.private_key
-    },
-    projectId: metadata.GCE_PROJECT
+  const auth = new google.auth.JWT(
+    parsedKeyFile.client_email,
+    undefined,
+    parsedKeyFile.private_key,
+    ["https://www.googleapis.com/auth/cloud-platform"]
+  );
+
+  const dns = google.dns({
+    version: "v1",
+    auth
   });
   return dns;
 };
 
-const getZoneForDomain = async (dns: DNS, domain: string): Promise<Zone> => {
-  const zones = await dns.getZones();
-  dns.getZones({})
-  const zone = zones.find((x: any) => x.name === domain);
+const getZoneForDomain = async (dns: dns_v1.Dns, domain: string) => {
+  const zones = await dns.managedZones.list();
+
+  const zone = (zones.data.managedZones || []).find(
+    (x: any) => x.name === domain
+  );
   console.log("found: ");
   console.log(zones);
   if (!zone) {
@@ -37,18 +39,27 @@ export const setVerifyAndAlias = async (
   const dns = getDNSInstance(metadata);
   const zone = await getZoneForDomain(dns, domain);
 
-  const result = await zone.addRecords([
-    zone.record("TXT", {
-      name: `_now.${domain}.`,
-      data: [token],
-      ttl: 3600 // TODO Configurable?
-    }),
-    zone.record("TXT", {
-      name: `now.${domain}.`,
-      data: ["alias.zeit.co"],
-      ttl: 3600 // TODO Configurable?
-    })
-  ]);
+  const result = await dns.changes.create({
+    managedZone: zone.id,
+    requestBody: {
+      kind: "dns#change",
+      additions: [
+        {
+          name: `_now.${domain}.`,
+          ttl: 3600,
+          rrdatas: [`"${token}"`],
+          type: "TXT"
+        },
+        {
+          name: `now.${domain}.`,
+          ttl: 3600,
+          rrdatas: ["alias.zeit.co"],
+          type: "CNAME"
+        }
+      ]
+    }
+  });
+
   console.log(result);
 
   return result;
