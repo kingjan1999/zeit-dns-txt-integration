@@ -1,16 +1,37 @@
 {
   "name": "zeit-external-dns",
   "version": 2,
-  "builds": [
-    {
+  "builds": [{
       "src": "src/index.ts",
       "use": "@now/node@canary"
+    },
+    {
+      "src": "src/google-callback.ts",
+      "use": "@now/node"
+    },
+    {
+      "src": "src/connect-with-google.ts",
+      "use": "@now/node"
     }
   ],
-  "routes": [
-    {
+  "routes": [{
       "src": "/",
       "dest": "src/index.ts"
+    },
+    {
+      "src": "/google-callback",
+      "dest": "src/google-callback.ts"
+    },
+    {
+      "src": "/connect-with-google",
+      "dest": "src/connect-with-google.ts"
     }
-  ]
+  ],
+  "env": {
+		"NODE_ENV": "development",
+    "ROOT_URL": "http://localhost:5005",
+    "GOOGLE_CALLBACK_URL": "http://localhost:5005/google-callback",
+		"GOOGLE_CLIENT_ID": "<add your github client id>",
+		"GOOGLE_CLIENT_SECRET": "<add your github client secret>"
+	}
 }

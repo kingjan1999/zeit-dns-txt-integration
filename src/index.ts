@@ -4,7 +4,7 @@ import merge from "deepmerge";
 import providers from "./providers";
 import views from "./views";
 
-import fakeDomains from "../test/fakeDomains.json";
+// import fakeDomains from "../test/fakeDomains.json";
 import { fetchUnverifiedDomains } from "./domains";
 import errorscreen from "./views/errorscreen";
 
@@ -28,6 +28,7 @@ module.exports = withUiHook(async ({ payload, zeitClient }) => {
   console.log("Received Payload:");
   console.log(payload);
 
+
   // const domains = fakeDomains.domains.filter(x => !x.verified);
   const domains = await fetchUnverifiedDomains(payload.token);
   const domainBoxes = domains.map(domainItem);
@@ -37,7 +38,7 @@ module.exports = withUiHook(async ({ payload, zeitClient }) => {
   const defaultMetadata = {
     providers: {
       route53: { AWS_SECRET_ACCESS_KEY: "", AWS_ACCESS_KEY_ID: "" },
-      clouddns: { GCE_PROJECT: "", GCE_SERVICE_ACCOUNT_FILE: "" },
+      clouddns: { GCE_PROJECT: "", GCE_SERVICE_ACCOUNT_FILE: "", GOOGLE_TOKEN: "" },
       godaddy: {}
     }
   };
@@ -47,6 +48,12 @@ module.exports = withUiHook(async ({ payload, zeitClient }) => {
 
   // copy default data
   metadata = merge(defaultMetadata, metadata);
+
+  if(payload.query && payload.query.google_code) {
+    // save result to metadata
+    metadata.providers.clouddns.GOOGLE_TOKEN = payload.query.google_code;
+    await zeitClient.setMetadata(metadata); 
+  }
 
   try {
     if (payload.action.startsWith("verify")) {
@@ -85,8 +92,9 @@ module.exports = withUiHook(async ({ payload, zeitClient }) => {
 		`;
     } else if (payload.action === "configure") {
       const provider: string = payload.clientState.dnsProvider;
+      // we need the second parameter for cloud dns
       // @ts-ignore
-      const providerView = views[provider](metadata.providers[provider]);
+      const providerView = views[provider](metadata.providers[provider], payload.installationUrl);
       return htm`
         <Page>
           ${providerView}
