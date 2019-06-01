@@ -21,3 +21,6 @@ docs.md
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+
+# these aren't fake, these are real...
+test/fakeDomains.json 
