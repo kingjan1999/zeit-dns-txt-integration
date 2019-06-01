@@ -10,6 +10,10 @@
   },
   "scripts": {
     "deploy": "now",
-    "dev": "now dev -p 5005 -d"
+    "dev": "now dev -p 5005 -d",
+    "lint": "eslint ."
+  },
+  "devDependencies": {
+    "eslint": "^5.16.0"
   }
 }

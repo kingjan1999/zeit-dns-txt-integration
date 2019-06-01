@@ -1,6 +1,6 @@
-const util = require('util');
+const util = require("util");
 
-const Route53 = require('nice-route53');
+const Route53 = require("nice-route53");
 
 export default async (domain, token, metadata) => {
     const r53 = new Route53({
@@ -17,7 +17,7 @@ export default async (domain, token, metadata) => {
     const result = await util.promisify(r53.setRecord)({
         zoneId: zone.zoneId,
         name: `_now.${domain}`,
-        type: 'TXT',
+        type: "TXT",
         ttl: 3600, // TODO Configurable?
         values: [token]
     });
@@ -25,4 +25,4 @@ export default async (domain, token, metadata) => {
     console.log(result);
 
     return result;
-}
+};
