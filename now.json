@@ -1,5 +1,16 @@
 {
-	"name": "zeit-integration-starter-offline",
-	"version": 2,
-	"builds": [{ "src": "index.js", "use": "@now/node" }]
+  "name": "zeit-external-dns",
+  "version": 2,
+  "builds": [
+    {
+      "src": "src/index.ts",
+      "use": "@now/node@canary"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/",
+      "dest": "src/index.ts"
+    }
+  ]
 }
