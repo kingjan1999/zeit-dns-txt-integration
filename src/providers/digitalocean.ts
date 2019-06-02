@@ -12,7 +12,8 @@ const getAxiosInstance = (token: string) => {
 export const setVerifyAndAlias = async (
   domain: string,
   token: string,
-  metadata: DigitalOceanMetadata
+  metadata: DigitalOceanMetadata,
+  options: RecordOptions
 ) => {
   const axiosInstance = getAxiosInstance(metadata.API_KEY);
 
@@ -20,7 +21,7 @@ export const setVerifyAndAlias = async (
   const verifyRecord = {
     data: token,
     name: "_now",
-    ttl: 3600,
+    ttl: options.ttl,
     type: "TXT"
   };
 
@@ -32,8 +33,8 @@ export const setVerifyAndAlias = async (
   // alias record
   const aliasRecord = {
     data: "alias.zeit.co.",
-    name: "now",
-    ttl: 3600,
+    name: options.aliasDomain,
+    ttl: options.ttl,
     type: "CNAME"
   };
 

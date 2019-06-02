@@ -6,14 +6,16 @@ const Route53 = require("nice-route53");
 const getR53Instance = (metadata: AWSMetadata) => {
   return new Route53({
     accessKeyId: metadata.AWS_ACCESS_KEY_ID,
-    secretAccessKey: metadata.AWS_SECRET_ACCESS_KEY,
+    secretAccessKey: metadata.AWS_SECRET_ACCESS_KEY
   });
 };
 
 const getZoneForDomain = async (r53: any, domain: string) => {
   const zones = await doAsync(r53.zones).call(r53);
   console.log(zones);
-  const zone = zones.find((x: any) => x.name === domain || x.name === punycode.toUnicode(domain));
+  const zone = zones.find(
+    (x: any) => x.name === domain || x.name === punycode.toUnicode(domain)
+  );
   if (!zone) {
     throw new Error(`No zone found for domain ${domain}`);
   }
@@ -25,6 +27,7 @@ export const setVerifyAndAlias = async (
   domain: string,
   token: string,
   metadata: AWSMetadata,
+  options: RecordOptions
 ) => {
   const r53 = getR53Instance(metadata);
 
@@ -34,21 +37,19 @@ export const setVerifyAndAlias = async (
     r53.setRecord(
       {
         name: `_now.${domain}.`,
-        ttl: 3600, // TODO Configurable?
+        ttl: options.ttl,
         type: "TXT",
         values: [`"${token}"`],
-        zoneId: zone.zoneId,
+        zoneId: zone.zoneId
       },
       (err: any, result: any) => {
         if (err) {
           console.log(err);
           reject(err);
         } else {
-          console.log(result);
-          console.log("efolg");
           resolve(result);
         }
-      },
+      }
     );
   });
 
@@ -57,22 +58,22 @@ export const setVerifyAndAlias = async (
   const resultAlias = await new Promise((resolve, reject) => {
     r53.setRecord(
       {
-        name: `now.${domain}.`, // TODO Configurable?
-        ttl: 3600, // TODO Configurable?
+        name: `${options.aliasDomain}${
+          options.aliasDomain ? "." : ""
+        }${domain}.`, 
+        ttl: options.ttl, 
         type: "CNAME",
         values: ["alias.zeit.co"],
-        zoneId: zone.zoneId,
+        zoneId: zone.zoneId
       },
       (err: any, result: any) => {
         if (err) {
           console.log(err);
           reject(err);
         } else {
-          console.log(result);
-          console.log("efolg");
           resolve(result);
         }
-      },
+      }
     );
   });
 

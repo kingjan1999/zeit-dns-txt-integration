@@ -49,4 +49,9 @@ declare interface ZEITMetadata {
   };
 }
 
+declare interface RecordOptions {
+  ttl: number;
+  aliasDomain: string;
+}
+
 declare type SupportedProvider = "route53" | "clouddns" | "godaddy" | "digitalocean";

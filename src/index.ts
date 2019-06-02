@@ -116,14 +116,20 @@ module.exports = withUiHook(async ({ payload, zeitClient }) => {
       const domain = domains.find((x: ZEITDomain) => x.id === domainId);
       if (!domain) {
         console.log("error! domain not found " + domainId);
-        throw new Error("Domain not found anymore!");
+        throw new Error("Domain not found (anymore)!");
       }
 
       await providers[provider].provider.setVerifyAndAlias(
         domain.name,
         domain.verificationRecord,
         // @ts-ignore
-        metadata.providers[provider]
+        metadata.providers[provider],
+        {
+          aliasDomain: payload.clientState.subdomain,
+          ttl: !isNaN(payload.clientState.TTL)
+            ? parseInt(payload.clientState.TTL)
+            : 3600
+        }
       );
 
       successMessage = "Your domain was configured successfully!";
@@ -131,7 +137,7 @@ module.exports = withUiHook(async ({ payload, zeitClient }) => {
       // trigger verify
       if (await tryVerify(payload.token, domain.name)) {
         successMessage +=
-          "<BR /> Your domain has already been verified by zeit as well.";
+          "\n Your domain has already been verified by zeit as well.";
       }
       // no else here: The records haven't propagated yet, just wait
       // We COULD queue it here, but Zeit will do it as well so need for this

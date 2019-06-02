@@ -9,12 +9,12 @@ const getDNSInstance = (metadata: GCPMetadata) => {
     parsedKeyFile.client_email,
     undefined,
     parsedKeyFile.private_key,
-    ["https://www.googleapis.com/auth/cloud-platform"],
+    ["https://www.googleapis.com/auth/cloud-platform"]
   );
 
   const dns = google.dns({
     auth,
-    version: "v1",
+    version: "v1"
   });
   return dns;
 };
@@ -22,10 +22,10 @@ const getDNSInstance = (metadata: GCPMetadata) => {
 const getZoneForDomain = async (
   dns: dns_v1.Dns,
   domain: string,
-  metadata: GCPMetadata,
+  metadata: GCPMetadata
 ) => {
   const zones = await dns.managedZones.list({
-    project: metadata.GCE_PROJECT,
+    project: metadata.GCE_PROJECT
   });
 
   const sanitizedDomain = domain.endsWith(".") ? domain : domain + ".";
@@ -33,7 +33,7 @@ const getZoneForDomain = async (
   const zone = (zones.data.managedZones || []).find(
     (x: dns_v1.Schema$ManagedZone) =>
       x.dnsName === sanitizedDomain ||
-      x.dnsName === punycode.toUnicode(sanitizedDomain),
+      x.dnsName === punycode.toUnicode(sanitizedDomain)
   );
   console.log("found: ");
   console.log(zones.data.managedZones);
@@ -48,6 +48,7 @@ export const setVerifyAndAlias = async (
   domain: string,
   token: string,
   metadata: GCPMetadata,
+  options: RecordOptions
 ) => {
   const dns = getDNSInstance(metadata);
   const zone = await getZoneForDomain(dns, domain, metadata);
@@ -60,18 +61,20 @@ export const setVerifyAndAlias = async (
         {
           name: `_now.${domain}.`,
           rrdatas: [`"${token}"`],
-          ttl: 3600,
-          type: "TXT",
+          ttl: options.ttl,
+          type: "TXT"
         },
         {
-          name: `now.${domain}.`,
+          name: `${options.aliasDomain}${
+            options.aliasDomain ? "." : ""
+          }${domain}.`,
           rrdatas: ["alias.zeit.co."],
-          ttl: 3600,
-          type: "CNAME",
-        },
+          ttl: options.ttl,
+          type: "CNAME"
+        }
       ],
-      kind: "dns#change",
-    },
+      kind: "dns#change"
+    }
   });
 
   console.log(result);

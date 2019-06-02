@@ -5,18 +5,19 @@ export const setVerifyAndAlias = async (
     domain: string,
     token: string,
     metadata: GoDaddyMetadata,
+    options: RecordOptions
 ) => {
     const encodedDomain = encodeURIComponent(punycode.toUnicode(domain));
     const records = [
         {
             data: token,
             name: "_now",
-            ttl: 3600,
+            ttl: options.ttl,
             type: "TXT",
         }, {
             data: "alias.zeit.co",
-            name: "now",
-            ttl: 3600,
+            name: options.aliasDomain,
+            ttl: options.ttl,
             type: "CNAME",
         },
     ];
