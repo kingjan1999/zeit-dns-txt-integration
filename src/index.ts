@@ -62,15 +62,6 @@ module.exports = withUiHook(async ({ payload, zeitClient }) => {
         // @ts-ignore
         .map(([key, _]) => ({ key, name: providers[key].name }));
 
-      /* const configuredProviders = metadata.providers.;
-      const providerDescriptions = Object.keys(configuredProviders).map(
-        // @ts-ignore
-        (key: SupportedProvider) => ({
-          key,
-          name: providers[key].name,
-        }),
-      ); */
-
       return htm`
 			<${Verify} domain=${domain} providerDescriptions=${providerDescriptions} />
 		`;

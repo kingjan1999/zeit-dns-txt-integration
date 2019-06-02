@@ -16,7 +16,7 @@ export const setVerifyAndAlias = async (
   options: RecordOptions
 ) => {
   const axiosInstance = getAxiosInstance(metadata.API_KEY);
-
+  
   // verify record
   const verifyRecord = {
     data: token,
