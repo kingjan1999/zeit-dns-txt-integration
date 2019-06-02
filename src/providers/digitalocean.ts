@@ -16,7 +16,8 @@ export const setVerifyAndAlias = async (
   options: RecordOptions
 ) => {
   const axiosInstance = getAxiosInstance(metadata.API_KEY);
-  
+  const encodedDomain = encodeURIComponent(domain);
+
   // verify record
   const verifyRecord = {
     data: token,
@@ -26,7 +27,7 @@ export const setVerifyAndAlias = async (
   };
 
   const verifyResult = await axiosInstance.post(
-    `/domains/${domain}/records`,
+    `/domains/${encodedDomain}/records`,
     verifyRecord
   );
 
@@ -39,7 +40,7 @@ export const setVerifyAndAlias = async (
   };
 
   const aliasResult = await axiosInstance.post(
-    `/domains/${domain}/records`,
+    `/domains/${encodedDomain}/records`,
     aliasRecord
   );
 
