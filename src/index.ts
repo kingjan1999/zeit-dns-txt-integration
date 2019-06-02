@@ -5,53 +5,42 @@ import providers from "./providers";
 import views from "./views";
 
 // import fakeDomains from "../test/fakeDomains.json";
-import { fetchUnverifiedDomains } from "./domains";
-import errorscreen from "./views/errorscreen";
+import { fetchUnverifiedDomains, tryVerify } from "./domains";
+import Errorscreen from "./views/errorscreen";
+import Overview from "./views/overview";
+import Verify from "./views/verify";
 
-const domainItem = (domain: ZEITDomain) => {
-  const action = `verify-${domain.id}`;
-  return htm`
-	  <Box display="flex" justifyContent="space-between" margin="10px">
-	    ${domain.name}
-	    <Button action="${action}">Verify Now</Button>
-      </Box>
-	`;
-};
-
-const providerOption = (provider: { key: string; name: string }) => {
-  return htm`
-      <Option value="${provider.key}" caption="${provider.name}" />
-    `;
-};
 
 module.exports = withUiHook(async ({ payload, zeitClient }) => {
   console.log("Received Payload:");
   console.log(payload);
 
-
   // const domains = fakeDomains.domains.filter(x => !x.verified);
   const domains = await fetchUnverifiedDomains(payload.token);
-  const domainBoxes = domains.map(domainItem);
 
   let successMessage = "";
 
   const defaultMetadata: ZeitMetadata = {
     providers: {
       route53: { AWS_SECRET_ACCESS_KEY: "", AWS_ACCESS_KEY_ID: "" },
-      clouddns: { GCE_PROJECT: "", GCE_SERVICE_ACCOUNT_FILE: "", GOOGLE_TOKEN: "" },
+      clouddns: {
+        GCE_PROJECT: "",
+        GCE_SERVICE_ACCOUNT_FILE: "",
+        GOOGLE_TOKEN: ""
+      },
       godaddy: { API_KEY: "", API_SECRET: "" }
     }
   };
 
-  let metadata = await zeitClient.getMetadata() as ZeitMetadata;
-  console.log(metadata);
+  let metadata = (await zeitClient.getMetadata()) as ZeitMetadata;
 
   // copy default data
   metadata = merge(defaultMetadata, metadata);
 
   if (payload.query && payload.query.google_code) {
     // save result to metadata
-    metadata.providers.clouddns.GOOGLE_TOKEN = payload.query.google_code as string;
+    metadata.providers.clouddns.GOOGLE_TOKEN = payload.query
+      .google_code as string;
     await zeitClient.setMetadata(metadata);
   }
 
@@ -63,12 +52,10 @@ module.exports = withUiHook(async ({ payload, zeitClient }) => {
       );
       const domain = domains.find((x: ZEITDomain) => x.id === domainId);
       if (!domain) {
-        return; // TODO: error message
+        throw new Error("Could not find domain!");
       }
 
       const configuredProviders = metadata.providers;
-      console.log(Object.keys(configuredProviders));
-      console.log(providers);
       const providerDescriptions = Object.keys(configuredProviders).map(
         // @ts-ignore
         (key: SupportedProvider) => ({
@@ -76,41 +63,38 @@ module.exports = withUiHook(async ({ payload, zeitClient }) => {
           name: providers[key].name
         })
       );
-      const providerOptions = providerDescriptions.map(providerOption);
-      const action = `do-verify-${domainId}`;
+
       return htm`
-			<Page>
-				<H1>Verify ${domain.name}</H1>
-				<H2>Choose your DNS provider</H2>
-			  <Box display="flex" justifyContent="space-between">	  
-				  <Select name="dnsProvider" value="route53">
-				    ${providerOptions}
-          </Select>
-          <Button action="${action}">Verify Now</Button>
-        </Box>
-			</Page>
+			<${Verify} domain=${domain} providerDescriptions=${providerDescriptions} />
 		`;
     } else if (payload.action === "configure") {
-      const provider: string = payload.clientState.dnsProvider;
+      const provider: SupportedProvider = payload.clientState.dnsProvider;
       // we need the second parameter for cloud dns
-      // @ts-ignore
-      const providerView = views[provider](metadata.providers[provider], payload.installationUrl);
+      const providerView = views[provider](
+        // @ts-ignore
+        metadata.providers[provider],
+        payload.installationUrl
+      );
       return htm`
         <Page>
           ${providerView}
         </Page>
         `;
     } else if (payload.action.startsWith("save-")) {
-      const provider = payload.action.substr("save-".length) as SupportedProvider;
-      if (provider === 'clouddns' && payload.clientState.GCE_SERVICE_ACCOUNT_FILE) {
+      const provider = payload.action.substr(
+        "save-".length
+      ) as SupportedProvider;
+      if (
+        provider === "clouddns" &&
+        payload.clientState.GCE_SERVICE_ACCOUNT_FILE
+      ) {
         const fileContents = payload.clientState.GCE_SERVICE_ACCOUNT_FILE;
         try {
           const parsed = JSON.parse(fileContents);
           console.log(parsed);
           payload.clientState.GCE_SERVICE_ACCOUNT_FILE = JSON.stringify(parsed);
           payload.clientState.GCE_PROJECT = parsed.project_id;
-        }
-        catch (e) {
+        } catch (e) {
           throw new Error("The provided json file doesn't even look valid.");
         }
       }
@@ -125,7 +109,7 @@ module.exports = withUiHook(async ({ payload, zeitClient }) => {
       const domain = domains.find((x: ZEITDomain) => x.id === domainId);
       if (!domain) {
         console.log("error! domain not found " + domainId);
-        return; // TODO: error message
+        throw new Error("Domain not found anymore!");
       }
 
       await providers[provider].provider.setVerifyAndAlias(
@@ -134,40 +118,28 @@ module.exports = withUiHook(async ({ payload, zeitClient }) => {
         metadata.providers[provider]
       );
 
-      // TODO: Try verify via zeit
+      successMessage = "Your domain was configured successfully!";
 
-      successMessage = 'Your domain was configured successfully!';
+      // trigger verify
+      if(await tryVerify(payload.token, domain.name)) {
+        successMessage += "<BR /> Your domain has already been verified by zeit as well."
+      }
+      // no else here: The records haven't propagated yet, just wait
+      // We COULD queue it here, but Zeit will do it as well so need for this
+
     }
   } catch (e) {
     // FIXME: More specific error handling!
     console.log(e);
-    return errorscreen(e);
+    return htm`<${Errorscreen} error=${e} />`;
   }
 
   const availableProviders = Object.entries(providers).map(([key, value]) => ({
     key,
     name: value.name
   }));
-  const providerOptions = availableProviders.map(providerOption);
-  let successBox = "";
-  if (successMessage) {
-    successBox = htm`
-        <Box><Notice type="success">${successMessage}</Notice></Box>
-      `;
-  }
+
   return htm`
-    <Page>
-        ${successBox}
-        <H1>Verify Domains</H1>
-        ${domainBoxes}
-        <H1>Configuration</H1>
-        <H2>Choose DNS Provider to configure</H2>
-        <Box display="flex" justifyContent="space-between">	  
-          <Select name="dnsProvider" value="route53">
-            ${providerOptions}
-           </Select>
-           <Button action="configure">Configure</Button>
-         </Box>
-    </Page>
+    <${Overview} successMessage=${successMessage} domains=${domains} availableProviders=${availableProviders} />
   `;
 });
