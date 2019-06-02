@@ -24,11 +24,12 @@ module.exports = withUiHook(async ({ payload, zeitClient }) => {
       clouddns: {
         GCE_PROJECT: "",
         GCE_SERVICE_ACCOUNT_FILE: "",
-        GOOGLE_TOKEN: "",
+        GOOGLE_TOKEN: ""
       },
+      digitalocean: { API_KEY: "" },
       godaddy: { API_KEY: "", API_SECRET: "" },
-      route53: { AWS_SECRET_ACCESS_KEY: "", AWS_ACCESS_KEY_ID: "" },
-    },
+      route53: { AWS_SECRET_ACCESS_KEY: "", AWS_ACCESS_KEY_ID: "" }
+    }
   };
 
   let metadata = (await zeitClient.getMetadata()) as ZEITMetadata;
@@ -47,7 +48,7 @@ module.exports = withUiHook(async ({ payload, zeitClient }) => {
     if (payload.action.startsWith("verify")) {
       // XXX: It's 0 + 7 = 7, isn't it?
       const domainId = payload.action.substr(
-        payload.action.indexOf("verify-") + "verify-".length,
+        payload.action.indexOf("verify-") + "verify-".length
       );
       const domain = domains.find((x: ZEITDomain) => x.id === domainId);
       if (!domain) {
@@ -56,7 +57,7 @@ module.exports = withUiHook(async ({ payload, zeitClient }) => {
 
       const providerDescriptions = Object.entries(metadata.providers)
         .filter(([_, value]) => {
-          return Object.values(value).some((y) => !!y);
+          return Object.values(value).some(y => !!y);
         })
         // @ts-ignore
         .map(([key, _]) => ({ key, name: providers[key].name }));
@@ -79,7 +80,7 @@ module.exports = withUiHook(async ({ payload, zeitClient }) => {
       const providerView = views[provider](
         // @ts-ignore
         metadata.providers[provider],
-        payload.installationUrl,
+        payload.installationUrl
       );
       return htm`
         <Page>
@@ -88,7 +89,7 @@ module.exports = withUiHook(async ({ payload, zeitClient }) => {
         `;
     } else if (payload.action.startsWith("save-")) {
       const provider = payload.action.substr(
-        "save-".length,
+        "save-".length
       ) as SupportedProvider;
       if (
         provider === "clouddns" &&
@@ -110,7 +111,7 @@ module.exports = withUiHook(async ({ payload, zeitClient }) => {
     } else if (payload.action.startsWith("do-verify")) {
       const provider: SupportedProvider = payload.clientState.dnsProvider;
       const domainId = payload.action.substr(
-        payload.action.indexOf("do-verify-") + "do-verify-".length,
+        payload.action.indexOf("do-verify-") + "do-verify-".length
       );
       const domain = domains.find((x: ZEITDomain) => x.id === domainId);
       if (!domain) {
@@ -121,7 +122,8 @@ module.exports = withUiHook(async ({ payload, zeitClient }) => {
       await providers[provider].provider.setVerifyAndAlias(
         domain.name,
         domain.verificationRecord,
-        metadata.providers[provider],
+        // @ts-ignore
+        metadata.providers[provider]
       );
 
       successMessage = "Your domain was configured successfully!";
@@ -142,7 +144,7 @@ module.exports = withUiHook(async ({ payload, zeitClient }) => {
 
   const availableProviders = Object.entries(providers).map(([key, value]) => ({
     key,
-    name: value.name,
+    name: value.name
   }));
 
   return htm`
