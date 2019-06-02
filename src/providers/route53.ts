@@ -1,3 +1,5 @@
+import punycode from "punycode";
+
 const doAsync = require("doasync");
 const Route53 = require("nice-route53");
 
@@ -11,7 +13,7 @@ const getR53Instance = (metadata: AWSMetadata) => {
 const getZoneForDomain = async (r53: any, domain: string) => {
   const zones = await doAsync(r53.zones).call(r53);
   console.log(zones);
-  const zone = zones.find((x: any) => x.name === domain);
+  const zone = zones.find((x: any) => x.name === domain || x.name === punycode.toUnicode(domain));
   if (!zone) {
     throw new Error(`No zone found for domain ${domain}`);
   }

@@ -12,6 +12,7 @@
     "doasync": "^2.0.1",
     "googleapis": "^40.0.0",
     "nice-route53": "^1.3.0",
+    "punycode": "^2.1.1",
     "url": "^0.11.0"
   },
   "scripts": {
