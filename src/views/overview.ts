@@ -1,5 +1,5 @@
 import { htm } from "@zeit/integration-utils";
-import { providerOption, KeyName } from "./util";
+import { IKeyName, providerOption } from "./util";
 
 const domainItem = (domain: ZEITDomain) => {
   const action = `verify-${domain.id}`;
@@ -11,17 +11,17 @@ const domainItem = (domain: ZEITDomain) => {
       `;
 };
 
-interface OverviewProps {
+interface IOverviewProps {
   successMessage: string;
   domains: ZEITDomain[];
-  availableProviders: KeyName[];
+  availableProviders: IKeyName[];
 }
 
 export default ({
   successMessage,
   domains,
-  availableProviders
-}: OverviewProps) => {
+  availableProviders,
+}: IOverviewProps) => {
   let successBox = "";
   if (successMessage) {
     successBox = htm`
@@ -39,7 +39,7 @@ export default ({
         ${domainBoxes}
         <H1>Configuration</H1>
         <H2>Choose DNS Provider to configure</H2>
-        <Box display="flex" justifyContent="space-between">	  
+        <Box display="flex" justifyContent="space-between">
           <Select name="dnsProvider" value="route53">
             ${providerOptions}
            </Select>

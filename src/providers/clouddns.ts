@@ -1,4 +1,4 @@
-import { google, dns_v1 } from "googleapis";
+import { dns_v1, google } from "googleapis";
 import punycode from "punycode";
 
 const getDNSInstance = (metadata: GCPMetadata) => {
@@ -9,12 +9,12 @@ const getDNSInstance = (metadata: GCPMetadata) => {
     parsedKeyFile.client_email,
     undefined,
     parsedKeyFile.private_key,
-    ["https://www.googleapis.com/auth/cloud-platform"]
+    ["https://www.googleapis.com/auth/cloud-platform"],
   );
 
   const dns = google.dns({
+    auth,
     version: "v1",
-    auth
   });
   return dns;
 };
@@ -22,16 +22,18 @@ const getDNSInstance = (metadata: GCPMetadata) => {
 const getZoneForDomain = async (
   dns: dns_v1.Dns,
   domain: string,
-  metadata: GCPMetadata
+  metadata: GCPMetadata,
 ) => {
   const zones = await dns.managedZones.list({
-    project: metadata.GCE_PROJECT
+    project: metadata.GCE_PROJECT,
   });
 
   const sanitizedDomain = domain.endsWith(".") ? domain : domain + ".";
 
   const zone = (zones.data.managedZones || []).find(
-    (x: dns_v1.Schema$ManagedZone) => x.dnsName === sanitizedDomain || x.dnsName == punycode.toUnicode(sanitizedDomain)
+    (x: dns_v1.Schema$ManagedZone) =>
+      x.dnsName === sanitizedDomain ||
+      x.dnsName === punycode.toUnicode(sanitizedDomain),
   );
   console.log("found: ");
   console.log(zones.data.managedZones);
@@ -45,7 +47,7 @@ const getZoneForDomain = async (
 export const setVerifyAndAlias = async (
   domain: string,
   token: string,
-  metadata: GCPMetadata
+  metadata: GCPMetadata,
 ) => {
   const dns = getDNSInstance(metadata);
   const zone = await getZoneForDomain(dns, domain, metadata);
@@ -54,22 +56,22 @@ export const setVerifyAndAlias = async (
     managedZone: zone.id,
     project: metadata.GCE_PROJECT,
     requestBody: {
-      kind: "dns#change",
       additions: [
         {
           name: `_now.${domain}.`,
-          ttl: 3600,
           rrdatas: [`"${token}"`],
-          type: "TXT"
+          ttl: 3600,
+          type: "TXT",
         },
         {
           name: `now.${domain}.`,
-          ttl: 3600,
           rrdatas: ["alias.zeit.co."],
-          type: "CNAME"
-        }
-      ]
-    }
+          ttl: 3600,
+          type: "CNAME",
+        },
+      ],
+      kind: "dns#change",
+    },
   });
 
   console.log(result);

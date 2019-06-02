@@ -17,5 +17,5 @@ export default (metadata: AWSMetadata) => {
         </Fieldset>
         <Button action="save-route53">Save</Button>
       </Box>
-    `
-}
+    `;
+};

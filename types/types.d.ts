@@ -37,7 +37,7 @@ declare interface GoDaddyMetadata {
     API_SECRET: string;
 }
 
-declare interface ZeitMetadata {
+declare interface ZEITMetadata {
     providers: {
         route53: AWSMetadata;
         clouddns: GCPMetadata;

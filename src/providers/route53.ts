@@ -6,7 +6,7 @@ const Route53 = require("nice-route53");
 const getR53Instance = (metadata: AWSMetadata) => {
   return new Route53({
     accessKeyId: metadata.AWS_ACCESS_KEY_ID,
-    secretAccessKey: metadata.AWS_SECRET_ACCESS_KEY
+    secretAccessKey: metadata.AWS_SECRET_ACCESS_KEY,
   });
 };
 
@@ -24,7 +24,7 @@ const getZoneForDomain = async (r53: any, domain: string) => {
 export const setVerifyAndAlias = async (
   domain: string,
   token: string,
-  metadata: AWSMetadata
+  metadata: AWSMetadata,
 ) => {
   const r53 = getR53Instance(metadata);
 
@@ -33,11 +33,11 @@ export const setVerifyAndAlias = async (
   const resultVerify = await new Promise((resolve, reject) => {
     r53.setRecord(
       {
-        zoneId: zone.zoneId,
         name: `_now.${domain}.`,
-        type: "TXT",
         ttl: 3600, // TODO Configurable?
-        values: [`"${token}"`]
+        type: "TXT",
+        values: [`"${token}"`],
+        zoneId: zone.zoneId,
       },
       (err: any, result: any) => {
         if (err) {
@@ -48,7 +48,7 @@ export const setVerifyAndAlias = async (
           console.log("efolg");
           resolve(result);
         }
-      }
+      },
     );
   });
 
@@ -57,11 +57,11 @@ export const setVerifyAndAlias = async (
   const resultAlias = await new Promise((resolve, reject) => {
     r53.setRecord(
       {
-        zoneId: zone.zoneId,
         name: `now.${domain}.`, // TODO Configurable?
-        type: "CNAME",
         ttl: 3600, // TODO Configurable?
-        values: ["alias.zeit.co"]
+        type: "CNAME",
+        values: ["alias.zeit.co"],
+        zoneId: zone.zoneId,
       },
       (err: any, result: any) => {
         if (err) {
@@ -72,11 +72,11 @@ export const setVerifyAndAlias = async (
           console.log("efolg");
           resolve(result);
         }
-      }
+      },
     );
   });
 
-  console.log(resultAlias)
+  console.log(resultAlias);
 
   return [resultVerify, resultAlias];
 };

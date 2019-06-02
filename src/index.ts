@@ -10,7 +10,6 @@ import Errorscreen from "./views/errorscreen";
 import Overview from "./views/overview";
 import Verify from "./views/verify";
 
-
 module.exports = withUiHook(async ({ payload, zeitClient }) => {
   console.log("Received Payload:");
   console.log(payload);
@@ -20,19 +19,19 @@ module.exports = withUiHook(async ({ payload, zeitClient }) => {
 
   let successMessage = "";
 
-  const defaultMetadata: ZeitMetadata = {
+  const defaultMetadata: ZEITMetadata = {
     providers: {
-      route53: { AWS_SECRET_ACCESS_KEY: "", AWS_ACCESS_KEY_ID: "" },
       clouddns: {
         GCE_PROJECT: "",
         GCE_SERVICE_ACCOUNT_FILE: "",
-        GOOGLE_TOKEN: ""
+        GOOGLE_TOKEN: "",
       },
-      godaddy: { API_KEY: "", API_SECRET: "" }
-    }
+      godaddy: { API_KEY: "", API_SECRET: "" },
+      route53: { AWS_SECRET_ACCESS_KEY: "", AWS_ACCESS_KEY_ID: "" },
+    },
   };
 
-  let metadata = (await zeitClient.getMetadata()) as ZeitMetadata;
+  let metadata = (await zeitClient.getMetadata()) as ZEITMetadata;
 
   // copy default data
   metadata = merge(defaultMetadata, metadata);
@@ -48,21 +47,28 @@ module.exports = withUiHook(async ({ payload, zeitClient }) => {
     if (payload.action.startsWith("verify")) {
       // XXX: It's 0 + 7 = 7, isn't it?
       const domainId = payload.action.substr(
-        payload.action.indexOf("verify-") + "verify-".length
+        payload.action.indexOf("verify-") + "verify-".length,
       );
       const domain = domains.find((x: ZEITDomain) => x.id === domainId);
       if (!domain) {
         throw new Error("Could not find domain!");
       }
 
-      const configuredProviders = metadata.providers;
+      const providerDescriptions = Object.entries(metadata.providers)
+        .filter(([_, value]) => {
+          return Object.values(value).some((y) => !!y);
+        })
+        // @ts-ignore
+        .map(([key, _]) => ({ key, name: providers[key].name }));
+
+      /* const configuredProviders = metadata.providers.;
       const providerDescriptions = Object.keys(configuredProviders).map(
         // @ts-ignore
         (key: SupportedProvider) => ({
           key,
-          name: providers[key].name
-        })
-      );
+          name: providers[key].name,
+        }),
+      ); */
 
       return htm`
 			<${Verify} domain=${domain} providerDescriptions=${providerDescriptions} />
@@ -73,7 +79,7 @@ module.exports = withUiHook(async ({ payload, zeitClient }) => {
       const providerView = views[provider](
         // @ts-ignore
         metadata.providers[provider],
-        payload.installationUrl
+        payload.installationUrl,
       );
       return htm`
         <Page>
@@ -82,7 +88,7 @@ module.exports = withUiHook(async ({ payload, zeitClient }) => {
         `;
     } else if (payload.action.startsWith("save-")) {
       const provider = payload.action.substr(
-        "save-".length
+        "save-".length,
       ) as SupportedProvider;
       if (
         provider === "clouddns" &&
@@ -104,7 +110,7 @@ module.exports = withUiHook(async ({ payload, zeitClient }) => {
     } else if (payload.action.startsWith("do-verify")) {
       const provider: SupportedProvider = payload.clientState.dnsProvider;
       const domainId = payload.action.substr(
-        payload.action.indexOf("do-verify-") + "do-verify-".length
+        payload.action.indexOf("do-verify-") + "do-verify-".length,
       );
       const domain = domains.find((x: ZEITDomain) => x.id === domainId);
       if (!domain) {
@@ -115,18 +121,18 @@ module.exports = withUiHook(async ({ payload, zeitClient }) => {
       await providers[provider].provider.setVerifyAndAlias(
         domain.name,
         domain.verificationRecord,
-        metadata.providers[provider]
+        metadata.providers[provider],
       );
 
       successMessage = "Your domain was configured successfully!";
 
       // trigger verify
-      if(await tryVerify(payload.token, domain.name)) {
-        successMessage += "<BR /> Your domain has already been verified by zeit as well."
+      if (await tryVerify(payload.token, domain.name)) {
+        successMessage +=
+          "<BR /> Your domain has already been verified by zeit as well.";
       }
       // no else here: The records haven't propagated yet, just wait
       // We COULD queue it here, but Zeit will do it as well so need for this
-
     }
   } catch (e) {
     // FIXME: More specific error handling!
@@ -136,7 +142,7 @@ module.exports = withUiHook(async ({ payload, zeitClient }) => {
 
   const availableProviders = Object.entries(providers).map(([key, value]) => ({
     key,
-    name: value.name
+    name: value.name,
   }));
 
   return htm`

@@ -3,9 +3,9 @@ import { htm } from "@zeit/integration-utils";
 const {ROOT_URL} = process.env;
 
 export default (metadata: GCPMetadata, installationUrl: string) => {
-  let currentValue = metadata.GCE_SERVICE_ACCOUNT_FILE || "";
-  const connectUrl = `${ROOT_URL}/connect-with-google?next=${encodeURIComponent(installationUrl)}`
-  
+  const currentValue = metadata.GCE_SERVICE_ACCOUNT_FILE || "";
+  const connectUrl = `${ROOT_URL}/connect-with-google?next=${encodeURIComponent(installationUrl)}`;
+
   // TODO integrate oauth:
   // This is already prepared, the app just needs to be submitted
   // <Link href=${connectUrl}>Connect With Google</Link>

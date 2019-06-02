@@ -17,5 +17,5 @@ export default (metadata: GoDaddyMetadata) => {
         </Fieldset>
         <Button action="save-godaddy">Save</Button>
       </Box>
-    `
-}
+    `;
+};
